@@ -63,192 +63,35 @@ export default function TeamActivity({ params }: PageProps) {
     }
 
     // Fetch team data and activity
-    const fetchTeamData = () => {
-      // Mock data - in a real app, this would be an API call
-      const mockTeams: Team[] = [
-        {
-          id: '1',
-          name: 'Code Ninjas',
-          members: ['John Doe', 'Jane Smith'],
-          completedRounds: {
-            round1: true,
-            round2: true,
-            round3: false
-          },
-          score: 720,
-          createdAt: '2023-06-15T10:30:00Z',
-          rounds: {
-            round1: {
-              status: 'completed',
-              startTime: '2023-06-15T11:00:00Z',
-              endTime: '2023-06-15T11:15:00Z',
-              score: 280,
-              attempts: 2,
-              hints: 0
-            },
-            round2: {
-              status: 'completed',
-              startTime: '2023-06-15T11:30:00Z',
-              endTime: '2023-06-15T12:00:00Z',
-              score: 440,
-              attempts: 3,
-              hints: 1
-            },
-            round3: {
-              status: 'in-progress',
-              startTime: '2023-06-15T12:15:00Z',
-              attempts: 1,
-              hints: 2
-            }
-          }
-        },
-        {
-          id: '2',
-          name: 'Cyber Wizards',
-          members: ['Alice Johnson', 'Bob Brown'],
-          completedRounds: {
-            round1: true,
-            round2: true,
-            round3: true
-          },
-          score: 850,
-          createdAt: '2023-06-15T09:45:00Z',
-          rounds: {
-            round1: {
-              status: 'completed',
-              startTime: '2023-06-15T10:00:00Z',
-              endTime: '2023-06-15T10:10:00Z',
-              score: 300,
-              attempts: 1,
-              hints: 0
-            },
-            round2: {
-              status: 'completed',
-              startTime: '2023-06-15T10:20:00Z',
-              endTime: '2023-06-15T10:40:00Z',
-              score: 250,
-              attempts: 2,
-              hints: 0
-            },
-            round3: {
-              status: 'completed',
-              startTime: '2023-06-15T10:50:00Z',
-              endTime: '2023-06-15T11:30:00Z',
-              score: 300,
-              attempts: 4,
-              hints: 1
-            }
-          }
+    const fetchTeamData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/teams/${id}/activity`);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch team activity');
         }
-      ];
-      
-      const mockActivities: TeamActivity[] = [
-        {
-          id: '1',
-          teamId: '1',
-          round: 1,
-          action: 'start',
-          timestamp: '2023-06-15T11:00:00Z'
-        },
-        {
-          id: '2',
-          teamId: '1',
-          round: 1,
-          action: 'attempt',
-          timestamp: '2023-06-15T11:05:00Z',
-          details: 'Incorrect URL submitted'
-        },
-        {
-          id: '3',
-          teamId: '1',
-          round: 1,
-          action: 'complete',
-          timestamp: '2023-06-15T11:15:00Z',
-          score: 280
-        },
-        {
-          id: '4',
-          teamId: '1',
-          round: 2,
-          action: 'start',
-          timestamp: '2023-06-15T11:30:00Z'
-        },
-        {
-          id: '5',
-          teamId: '1',
-          round: 2,
-          action: 'attempt',
-          timestamp: '2023-06-15T11:35:00Z',
-          details: 'Incorrect password submitted'
-        },
-        {
-          id: '6',
-          teamId: '1',
-          round: 2,
-          action: 'hint',
-          timestamp: '2023-06-15T11:40:00Z',
-          details: 'Requested hint #1'
-        },
-        {
-          id: '7',
-          teamId: '1',
-          round: 2,
-          action: 'attempt',
-          timestamp: '2023-06-15T11:45:00Z',
-          details: 'Incorrect password submitted'
-        },
-        {
-          id: '8',
-          teamId: '1',
-          round: 2,
-          action: 'complete',
-          timestamp: '2023-06-15T12:00:00Z',
-          score: 440
-        },
-        {
-          id: '9',
-          teamId: '1',
-          round: 3,
-          action: 'start',
-          timestamp: '2023-06-15T12:15:00Z'
-        },
-        {
-          id: '10',
-          teamId: '1',
-          round: 3,
-          action: 'hint',
-          timestamp: '2023-06-15T12:20:00Z',
-          details: 'Requested hint #1'
-        },
-        {
-          id: '11',
-          teamId: '1',
-          round: 3,
-          action: 'hint',
-          timestamp: '2023-06-15T12:25:00Z',
-          details: 'Requested hint #2'
-        },
-        {
-          id: '12',
-          teamId: '1',
-          round: 3,
-          action: 'attempt',
-          timestamp: '2023-06-15T12:35:00Z',
-          details: 'Incorrect solution submitted'
+        
+        const data = await response.json();
+        
+        if (data.team) {
+          setTeam(data.team);
+        } else {
+          setError('Team data not found');
         }
-      ];
-      
-      const foundTeam = mockTeams.find(t => t.id === id);
-      const teamActivities = mockActivities.filter(a => a.teamId === id);
-      
-      if (foundTeam) {
-        setTeam(foundTeam);
-        setActivities(teamActivities);
-      } else {
-        setError('Team not found');
+        
+        if (data.activities && Array.isArray(data.activities)) {
+          setActivities(data.activities);
+        } else {
+          setActivities([]);
+        }
+      } catch (error) {
+        console.error('Error fetching team activity:', error);
+        setError('Failed to load team activity data');
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
     
     fetchTeamData();

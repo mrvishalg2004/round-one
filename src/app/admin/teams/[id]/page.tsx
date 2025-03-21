@@ -47,60 +47,37 @@ export default function EditTeam({ params }: PageProps) {
     }
 
     // Fetch team data
-    const fetchTeam = () => {
-      // Mock data - in a real app, this would be an API call
-      const mockTeams: Team[] = [
-        {
-          id: '1',
-          name: 'Code Ninjas',
-          members: ['John Doe', 'Jane Smith'],
-          completedRounds: {
-            round1: true,
-            round2: true,
-            round3: false
-          },
-          score: 720,
-          createdAt: '2023-06-15T10:30:00Z'
-        },
-        {
-          id: '2',
-          name: 'Cyber Wizards',
-          members: ['Alice Johnson', 'Bob Brown'],
-          completedRounds: {
-            round1: true,
-            round2: true,
-            round3: true
-          },
-          score: 850,
-          createdAt: '2023-06-15T09:45:00Z'
-        },
-        {
-          id: '3',
-          name: 'Security Squad',
-          members: ['Carol White', 'Dave Green'],
-          completedRounds: {
-            round1: true,
+    const fetchTeam = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/teams/${id}`);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch team');
+        }
+        
+        const data = await response.json();
+        
+        if (data.team) {
+          setTeam(data.team);
+          setTeamName(data.team.name);
+          setMembers(data.team.members || []);
+          setCompletedRounds(data.team.completedRounds || {
+            round1: false,
             round2: false,
             round3: false
-          },
-          score: 350,
-          createdAt: '2023-06-15T11:15:00Z'
+          });
+          setScore(data.team.score || 0);
+        } else {
+          setError('Team data not found');
         }
-      ];
-      
-      const foundTeam = mockTeams.find(t => t.id === id);
-      
-      if (foundTeam) {
-        setTeam(foundTeam);
-        setTeamName(foundTeam.name);
-        setMembers([...foundTeam.members]);
-        setCompletedRounds({...foundTeam.completedRounds});
-        setScore(foundTeam.score);
-      } else {
-        setError('Team not found');
+      } catch (error) {
+        console.error('Error fetching team:', error);
+        setError('Failed to load team data');
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
     
     fetchTeam();
@@ -189,33 +166,46 @@ export default function EditTeam({ params }: PageProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
+    
     if (!validateForm()) {
       return;
     }
-
-    setSaving(true);
-
-    // In a real app, this would make an API call to update the team
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setSaving(true);
+      setError('');
       
-      // Mock success
-      console.log('Updated team:', {
-        id,
+      const updatedTeam = {
         name: teamName,
-        members: members.filter(m => m.trim()),
+        members,
         completedRounds,
         score
+      };
+      
+      const response = await fetch(`/api/teams/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedTeam),
       });
       
-      // Redirect to teams page
-      router.push('/admin/teams');
-    } catch (err) {
-      setError('Failed to update team. Please try again.');
-      console.error('Error updating team:', err);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update team');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('Team updated successfully');
+        router.push('/admin/teams');
+      } else {
+        throw new Error(data.error || 'Failed to update team');
+      }
+    } catch (error) {
+      console.error('Error updating team:', error);
+      setError(error instanceof Error ? error.message : 'An unknown error occurred');
     } finally {
       setSaving(false);
     }

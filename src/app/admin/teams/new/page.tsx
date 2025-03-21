@@ -78,22 +78,34 @@ export default function NewTeam() {
 
     setLoading(true);
 
-    // In a real app, this would make an API call to create the team
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock success
-      console.log('Created team:', {
-        name: teamName,
-        members: members.filter(m => m.trim()),
+      const response = await fetch('/api/teams', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: teamName,
+          members: members.filter(m => m.trim()),
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create team');
+      }
+
+      const data = await response.json();
       
-      // Redirect to teams page
-      router.push('/admin/teams');
-    } catch (err) {
-      setError('Failed to create team. Please try again.');
-      console.error('Error creating team:', err);
+      if (data.success) {
+        alert('Team created successfully');
+        router.push('/admin/teams');
+      } else {
+        throw new Error(data.error || 'Failed to create team');
+      }
+    } catch (error) {
+      console.error('Error creating team:', error);
+      setError(error instanceof Error ? error.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
     }

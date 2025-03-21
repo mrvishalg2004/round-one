@@ -81,10 +81,26 @@ export default function TeamsAdmin() {
     return matchesSearch;
   });
 
-  const handleDeleteTeam = (id: string) => {
-    // In a real app, this would make an API call
+  const handleDeleteTeam = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this team?')) {
-      setTeams(teams.filter(team => team.id !== id));
+      try {
+        const response = await fetch(`/api/teams?id=${id}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          // Remove the team from local state
+          setTeams(teams.filter(team => team.id !== id));
+          alert('Team deleted successfully');
+        } else {
+          const errorData = await response.json();
+          console.error('Error deleting team:', errorData);
+          alert(`Failed to delete team: ${errorData.error || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error deleting team:', error);
+        alert('An error occurred while deleting the team');
+      }
     }
   };
 

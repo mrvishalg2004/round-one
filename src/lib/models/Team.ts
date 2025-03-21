@@ -1,121 +1,113 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema, Document, model, Model } from 'mongoose';
 
-const TeamSchema = new mongoose.Schema({
-  teamName: {
+// Define the schema for round details
+interface RoundDetails {
+  completed: boolean;
+  score: number;
+  attempts: number;
+  timeSpent: number;
+  hintUsed: boolean;
+  completedAt: Date;
+}
+
+// Define the schema for completed rounds
+interface CompletedRounds {
+  round1: boolean;
+  round2: boolean;
+  round3: boolean;
+}
+
+// Define the interface for the Team document
+export interface TeamDocument extends Document {
+  name: string;
+  members: string[];
+  completedRounds: CompletedRounds;
+  roundDetails?: {
+    round1?: RoundDetails;
+    round2?: RoundDetails;
+    round3?: RoundDetails;
+  };
+  score: number;
+  createdAt: Date;
+  lastActive: Date;
+}
+
+// Define the team schema
+const TeamSchema = new Schema<TeamDocument>({
+  name: {
     type: String,
     required: true,
     unique: true,
-    trim: true,
+    trim: true
   },
-  members: [
-    {
-      name: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-      email: {
-        type: String,
-        required: true,
-        trim: true,
-      }
+  members: {
+    type: [String],
+    required: true,
+    validate: [(val: string[]) => val.length >= 1, 'Team must have at least one member']
+  },
+  completedRounds: {
+    round1: {
+      type: Boolean,
+      default: false
+    },
+    round2: {
+      type: Boolean,
+      default: false
+    },
+    round3: {
+      type: Boolean,
+      default: false
     }
-  ],
-  progress: {
-    currentRound: {
-      type: Number,
-      default: 1,
+  },
+  roundDetails: {
+    round1: {
+      completed: Boolean,
+      score: Number,
+      attempts: Number,
+      timeSpent: Number,
+      hintUsed: Boolean,
+      completedAt: Date
     },
-    round1Completed: {
-      type: Boolean,
-      default: false,
+    round2: {
+      completed: Boolean,
+      score: Number,
+      attempts: Number,
+      timeSpent: Number,
+      hintUsed: Boolean,
+      completedAt: Date
     },
-    round2Completed: {
-      type: Boolean,
-      default: false,
-    },
-    round3Completed: {
-      type: Boolean,
-      default: false,
-    },
-    attempts: {
-      round1: {
-        type: Number,
-        default: 0
-      },
-      round2: {
-        type: Number,
-        default: 0
-      },
-      round3: {
-        type: Number,
-        default: 0
-      }
-    },
-    scores: {
-      round1: {
-        type: Number,
-        default: 0
-      },
-      round2: {
-        type: Number,
-        default: 0
-      },
-      round3: {
-        type: Number,
-        default: 0
-      }
-    },
-    stats: {
-      round1: {
-        timeSpent: Number,
-        hintUsed: Boolean,
-        completedAt: Date
-      },
-      round2: {
-        timeSpent: Number,
-        hintUsed: Boolean,
-        completedAt: Date
-      },
-      round3: {
-        timeSpent: Number,
-        hintUsed: Boolean,
-        completedAt: Date
-      }
-    },
-    roundStartTimes: {
-      round1: {
-        type: Date,
-      },
-      round2: {
-        type: Date,
-      },
-      round3: {
-        type: Date,
-      }
-    },
-    roundCompletionTimes: {
-      round1: {
-        type: Date,
-      },
-      round2: {
-        type: Date,
-      },
-      round3: {
-        type: Date,
-      }
+    round3: {
+      completed: Boolean,
+      score: Number,
+      attempts: Number,
+      timeSpent: Number,
+      hintUsed: Boolean,
+      completedAt: Date
     }
+  },
+  score: {
+    type: Number,
+    default: 0
   },
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now
   },
+  lastActive: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-// Virtual for total score
-TeamSchema.virtual('totalScore').get(function() {
-  const scores = this.progress.scores || {};
-  return (scores.round1 || 0) + (scores.round2 || 0) + (scores.round3 || 0);
-});
+// Register the model
+let Team: Model<TeamDocument>;
 
-export default mongoose.models.Team || mongoose.model('Team', TeamSchema); 
+try {
+  // Check if the model is already registered
+  Team = mongoose.model<TeamDocument>('Team');
+} catch {
+  // If not, register it
+  Team = mongoose.model<TeamDocument>('Team', TeamSchema);
+}
+
+export default Team; 

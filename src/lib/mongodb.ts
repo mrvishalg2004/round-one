@@ -1,29 +1,38 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, Db } from 'mongodb';
 
-const MONGODB_URI = 'mongodb+srv://rounds:rounds123@aiodysseyrounds.rr88p.mongodb.net/?retryWrites=true&w=majority&appName=AIODYSSEYRounds';
-const MONGODB_DB = 'game-db';
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
-}
-
-if (!MONGODB_DB) {
-  throw new Error('Please define the MONGODB_DB environment variable inside .env.local');
-}
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/https-find';
+const MONGODB_DB = process.env.MONGODB_DB || 'https-find';
 
 let cachedClient: MongoClient | null = null;
-let cachedDb: any = null;
+let cachedDb: Db | null = null;
 
-export async function connectToDatabase() {
+export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
   if (cachedClient && cachedDb) {
     return { client: cachedClient, db: cachedDb };
   }
 
-  const client = await MongoClient.connect(MONGODB_URI);
-  const db = client.db(MONGODB_DB);
+  if (!MONGODB_URI) {
+    throw new Error('Please define the MONGODB_URI environment variable');
+  }
 
-  cachedClient = client;
-  cachedDb = db;
+  if (!MONGODB_DB) {
+    throw new Error('Please define the MONGODB_DB environment variable');
+  }
 
-  return { client, db };
-} 
+  try {
+    console.log('Connected to database');
+    const client = await MongoClient.connect(MONGODB_URI);
+    const db = client.db(MONGODB_DB);
+
+    cachedClient = client;
+    cachedDb = db;
+
+    return { client, db };
+  } catch (error) {
+    console.error('Failed to connect to database:', error);
+    throw error;
+  }
+}
+
+// Add default export
+export default connectToDatabase; 
